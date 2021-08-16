@@ -491,6 +491,3 @@ tokens = f.read().splitlines()
 f.close()
 
 client.run(tokens[0])
-
-#ODY3NDQzMDU3OTgwNjA0NDQ2.YPhLTQ.lefMXmapF6TNPSkG4XxSAuyaFJk
-#ODYwOTI0NDUxNDM2ODg4MDc2.YOCUYA.1uEesI6_HaQEcbucSpy3dhwT_fo
