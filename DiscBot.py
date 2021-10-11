@@ -1,8 +1,9 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import random
 import spyLocations as sp
 import perfil6
+import time
 
 client = commands.Bot(command_prefix='!', description="IlarilarilarieOOO")
 
@@ -10,17 +11,6 @@ client = commands.Bot(command_prefix='!', description="IlarilarilarieOOO")
 @client.event
 async def on_ready():
     print('Logado como {0.user}'.format(client))
-
-#Scanner de mensagens
-palavras_tristes = ['triste', 'depressão', 'depressivo', 'depressao']
-
-@client.listen()
-async def on_message(message):
-    if message.author == client.user:
-        return    
-
-    if any(word in message.content for word in palavras_tristes):
-        await message.channel.send("Tem alguem triste aqui? Toma uma mamada glub glub")
 
 #Comandos
 
@@ -234,6 +224,8 @@ voters = []
 guess = []
 location = None
 spy = 0
+runningClock = 0
+startTime = 0
 
 @client.command()
 async def spyRules(ctx):
@@ -327,7 +319,7 @@ async def spyGuess(ctx, g:discord.Member):
                     if (mostVoted[0] == spy):
                         await ctx.send("Os inocentes acertaram! <@{}> era de fato o espião :spy:!".format(spy))
                         await ctx.send("Para o espião sair dessa furada ele deve adivinhar o local em que os inocentes estão!")
-                        await ctx.send("Use !spreveal para mostart o local e terminar o jogo.")
+                        await ctx.send("Use !spyReveal para mostart o local e terminar o jogo.")
 
                     else:
                         await ctx.send("Os inocentes erraram :( O espião era <@{}>".format(spy))
@@ -347,7 +339,7 @@ async def spyGuess(ctx, g:discord.Member):
 
 @client.command()
 async def spyReveal(ctx):
-    global spyfalling, players, guess, spyfallPlaying, location, voters, spy
+    global spyfalling, players, guess, spyfallPlaying, location, voters, spy, runningClock, startTime
 
     if spyfalling:
         spyfalling = False
@@ -360,6 +352,8 @@ async def spyReveal(ctx):
         voters = []
         location = None
         spy = 0
+        runningClock = 0
+        startTime = 0
 
     else:
         await ctx.send("Não existe um jogo em andamento!")
@@ -387,50 +381,50 @@ async def spyStart(ctx):
                 await user.send("=======================")
                 await user.send("Você é um inocente. O local é: {}. Seu trabalho é {}".format(location, sp.chooseJob(location)))
 
-        await ctx.send("O jogo começou!\nAcione cronômetro de 6 minutos :alarm_clock:.")
-        await ctx.send("Quando o tempo acabar, vote em quem você acha que é o espião usando !spguess @NomeDaPessoa")
+        await ctx.send("O jogo começou!\nAcione cronômetro de 8 minutos :alarm_clock:.")
+        await ctx.send("Quando o tempo acabar, vote em quem você acha que é o espião usando !spyGuess @NomeDaPessoa")
         await ctx.send("<@{}> começa fazendo as perguntas.".format(random.choice(players)))
 
-        #Relógio
-        '''
-        t60 = False #1 min
-        t120 = False #2 min
-        t180 = False #3 min
-        t240 = False #4 min
-        t300 = False #5 min
-        t360 = False #6 min
-
-        currTime = time.time()
-        while time.time() - currTime <= 360:
-            t = time.time() - currTime
-            
-            if t >= 360 and not t360:
-                t360 = True
-                await ctx.send(":alarm_clock: Já se passaram 6 minutos :alarm_clock:")
-            elif t >= 300 and not t300:
-                t300 = True
-                await ctx.send(":alarm_clock: Já se passaram 5 minutos :alarm_clock:")
-            elif t >= 240 and not t240:
-                t240 = True
-                await ctx.send(":alarm_clock: Já se passaram 4 minutos :alarm_clock:")
-            elif t >= 180 and not t180:
-                t180 = True
-                await ctx.send(":alarm_clock: Já se passaram 3 minutos :alarm_clock:")
-            elif t >= 120 and not t120:
-                t120 = True
-                await ctx.send(":alarm_clock: Já se passaram 2 minutos :alarm_clock:")
-            elif t >= 60 and not t60:
-                t60 = True
-                await ctx.send(":alarm_clock: Já se passou 1 minuto    :alarm_clock:")
-
-        await ctx.send("Acabou o tempo, vote em quem você acha que é o espião usando !spguess @NomeDaPessoa")
-        '''
+        #Relogio
+        global runningClock, startTime
+        runningClock = 1
+        startTime = time.time()
+        
     elif not spyfalling:
         await ctx.send("Não existe um jogo em andamento, crie um com !spyfall")
 
     elif len(players) < 4:
         await ctx.send("Não existem players o suficiente!")
 
+@tasks.loop(seconds=60)
+async def spyClock():
+    global runningClock
+
+    channel = client.get_channel(865306263931060255)
+    if runningClock:
+        seconds = time.time() - startTime
+        
+        if seconds >= 480:
+            await channel.send("Já se passaram 8 minutos! O jogo está encerrado.\nVote em quem você acha que é o espião usando !spyGuess @NomeDaPessoa")
+            runningClock = 0
+
+        elif seconds >= 420:
+            await channel.send(":alarm_clock:Falta **1** minuto para acabar!:alarm_clock:")
+        elif seconds >= 360:
+            await channel.send(":alarm_clock:Faltam **2** minutos para acabar!:alarm_clock:")
+        elif seconds >= 300:
+            await channel.send(":alarm_clock:Faltam **3** minutos para acabar!:alarm_clock:")
+        elif seconds >= 240:
+            await channel.send(":alarm_clock:Faltam **4** minutos para acabar!:alarm_clock:")
+        elif seconds >= 180:
+            await channel.send(":alarm_clock:Faltam **5** minutos para acabar!:alarm_clock:")
+        elif seconds >= 120:
+            await channel.send(":alarm_clock:Faltam **6** minutos para acabar!:alarm_clock:")
+        elif seconds >= 60:
+            await channel.send(":alarm_clock:Faltam **7** minutos para acabar!:alarm_clock:")
+
+            
+spyClock.start()
 #00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 #Parte do perfil
 

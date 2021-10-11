@@ -107,13 +107,6 @@ async def comandos(ctx):
                     "\n\n!pause -> Pausa a música que está tocando \n\n!unpause -> Despausa a música \n\n!stop -> Para de reproduzir áudio \n\n!next -> Passa para a próxima música" +
                     "\n\n!leave -> Faz o bot sair do canal de voz")
 
-@client.command()
-async def SouUmBobao(ctx):
-    if ctx.author.id == 594246552503975946:
-        await ctx.send("Você realmente é um bobão!")
-    else:
-        await ctx.send("Você não é um bobão!")
-
 @tasks.loop(seconds=10)
 async def updateQueue():
     await nextSong()
