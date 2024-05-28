@@ -3,11 +3,16 @@ from discord.ext import commands, tasks
 from discord.ext.commands.core import after_invoke
 import musicPlayer as mp
 
-client = commands.Bot(command_prefix='!', description="IlarilarilarieOOO")
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members=True
+
+client = commands.Bot(command_prefix='!', intents=intents)
 
 @client.event
 async def on_ready():
     print('Logado como {0.user}'.format(client))
+    updateQueue.start()
 
 musicQueue = []
 musicChannel = []
@@ -22,8 +27,17 @@ async def nextSong():
         if not voice.is_playing():
 
             music = musicQueue.pop(0)
+
+            embed = discord.Embed(
+                colour=discord.Colour.green(),
+                title = "Atualmente tocando:",
+                description = music[1],
+            )
             
-            await ctx.send("Tocando {}".format(music[1]))
+            embed.set_thumbnail(url=music[2])
+            
+            await ctx.send(embed=embed)
+            
             ctx.voice_client.play(music[0])
 
         else:
@@ -31,13 +45,14 @@ async def nextSong():
 
 #Plays music
 @client.command()
-async def play(ctx, *,Music):
+async def play(ctx, *, Music):
     global musicQueue, musicChannel
 
     #Connecting to a voice channel
     if ctx.voice_client == None:
         try:
-            await ctx.author.voice.channel.connect()
+            channel = ctx.author.voice.channel
+            await channel.connect()
         except:
             await ctx.send("Você não está conectado a nenhum canal de voz!")
             return
@@ -53,18 +68,26 @@ async def play(ctx, *,Music):
         except:
             await ctx.send("Verifique se o título da música não possui acentos e tente novamente.")
 
+    await ctx.message.delete()
 
     #Extracting the audio
     data = await mp.Youtube.ExtractAudio(url)
 
     #Actually playing or adding to queue
     voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
-    musicQueue.append([data[0], data[1]])
+    musicQueue.append([data[0], data[1], data[2]])
     if not voice.is_playing():
         musicChannel = ctx
         await nextSong()
     else:
-        await ctx.send("Música adicionada à fila!")
+        embed = discord.Embed(
+            title = "Música adicionada à fila!",
+            description = data[1],
+        )
+        
+        embed.set_thumbnail(url=data[2])
+        
+        await ctx.send(embed=embed)
 
 @client.command()
 async def leave(ctx):
@@ -111,12 +134,9 @@ async def comandos(ctx):
 async def updateQueue():
     await nextSong()
 
-
-updateQueue.start()
-
 #Escondendo o token
-f = open("C:/Users/Thomaz/Desktop/F/PythonProjects/discordBotTokens.txt", "r")
+f = open("C:/Users/enriq/Documents/auth_disc.txt", "r")
 tokens = f.read().splitlines()
 f.close()
 
-client.run(tokens[1])
+client.run(tokens[0])

@@ -1,6 +1,6 @@
 import urllib.request
 import re
- 
+
 import youtube_dl
 import asyncio
 import discord
@@ -43,8 +43,10 @@ class Youtube():
 
         #data = ytdl.extract_info(URL, download=False)
 
+        thumbnail = data['thumbnail']
+
         fl = data['url']
         title = data['title']
  
         ms = discord.FFmpegPCMAudio(fl, **ffmpeg_options)
-        return ms, title
+        return ms, title, thumbnail
